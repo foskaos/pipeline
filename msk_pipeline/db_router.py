@@ -27,5 +27,5 @@ class MSKDatabaseRouter:
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """Prevent migrations for the external database."""
         if app_label == "msk_db":
-            return False  # Don't allow Django to create tables in 'msk_db'
+            return False
         return None
