@@ -3,7 +3,7 @@ from django.db import models
 class ExternalDatabaseModel(models.Model):
     class Meta:
         abstract = True
-        managed = False  # Ensures Django does not manage the table
+        managed = False
         app_label = 'msk_db'
 
     def save(self, *args, **kwargs):
@@ -15,7 +15,7 @@ class Schedule(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'schedule'
-        managed = False  # Ensures Django does not manage the table
+
 
 
 class Activity(ExternalDatabaseModel):
@@ -25,7 +25,6 @@ class Activity(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'activity'
-        managed = False  # Ensures Django does not manage the table
 
 
 class Device(ExternalDatabaseModel):
@@ -35,7 +34,6 @@ class Device(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'device'
-        managed = False  # Ensures Django does not manage the table
 
 
 class Journey(ExternalDatabaseModel):
@@ -45,7 +43,6 @@ class Journey(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'journey'
-        managed = False  # Ensures Django does not manage the table
 
 
 class JourneyActivity(ExternalDatabaseModel):
@@ -54,7 +51,6 @@ class JourneyActivity(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'journey_activity'
-        managed = False  # Ensures Django does not manage the table
 
 
 class Patient(ExternalDatabaseModel):
@@ -65,7 +61,6 @@ class Patient(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'patient'
-        managed = False  # Ensures Django does not manage the table
 
 
 class PatientJourney(ExternalDatabaseModel):
@@ -81,7 +76,6 @@ class PatientJourney(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'patient_journey'
-        managed = False  # Ensures Django does not manage the table
 
 
 class StepResult(ExternalDatabaseModel):
@@ -91,7 +85,6 @@ class StepResult(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'step_result'
-        managed = False  # Ensures Django does not manage the table
 
 
 class Survey(ExternalDatabaseModel):
@@ -102,7 +95,6 @@ class Survey(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'survey'
-        managed = False  # Ensures Django does not manage the table
 
 
 class SurveyResult(ExternalDatabaseModel):
@@ -117,5 +109,4 @@ class SurveyResult(ExternalDatabaseModel):
 
     class Meta:
         db_table = 'survey_result'
-        managed = False  # Ensures Django does not manage the table
 
