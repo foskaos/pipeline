@@ -5,6 +5,8 @@ How to use this:
 1. clone repo
 2. docker-compose up --build
 3. create msk_db in postgres
+4. create analytics_db in postgres
+
 How it works:
 
 we have a postgres container and a 'web container'
@@ -22,3 +24,5 @@ create database
 
 docker exec -it postgres_db psql -U msk_user -d msk_db -f /msk_db.sql
 copy file
+
+

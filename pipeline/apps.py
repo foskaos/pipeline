@@ -6,4 +6,5 @@ class PipelineConfig(AppConfig):
     name = 'pipeline'
 
     def ready(self):
-        from .models import core, staging  # Ensures Django loads these modules
+        # load models module
+        from .models import core, staging, analytics

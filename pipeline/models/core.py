@@ -49,7 +49,7 @@ class Schedule(ExternalDatabaseModel):
 class Activity(ExternalDatabaseModel):
     id = models.AutoField(primary_key=True)
     content_slug = models.CharField(max_length=255)
-    schedule_id = models.ForeignKey(Schedule, on_delete=models.CASCADE, db_column='schedule_id', db_constraint=False)
+    schedule_id = models.IntegerField()#ForeignKey(Schedule, on_delete=models.CASCADE, db_column='schedule_id', db_constraint=False)
 
     class Meta:
         managed = False
@@ -77,8 +77,8 @@ class Journey(ExternalDatabaseModel):
 
 
 class JourneyActivity(ExternalDatabaseModel):
-    journey_id = models.ForeignKey(Journey, on_delete=models.CASCADE, db_column='journey_id', db_constraint=False)
-    activity_id = models.ForeignKey(Activity, on_delete=models.CASCADE, db_column='activity_id', db_constraint=False)
+    journey_id = models.IntegerField(primary_key=True, unique=False)
+    activity_id = models.IntegerField()
 
     class Meta:
         managed = False
@@ -113,7 +113,7 @@ class PatientJourney(ExternalDatabaseModel):
 
 
 class StepResult(ExternalDatabaseModel):
-    patient_id = models.ForeignKey(Patient, on_delete=models.CASCADE, db_column='patient_id', db_constraint=False)
+    patient_id = models.IntegerField(primary_key=True, unique=False)
     date = models.DateField()
     value = models.CharField(max_length=255)
 
