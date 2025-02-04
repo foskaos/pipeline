@@ -1,7 +1,14 @@
+# This set of models represents the transactional database, and is unmanaged.
+# The point of this is to provide a Django Native interface
+
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Func, OuterRef, Subquery, Value, QuerySet
 from django.db.models.functions import Coalesce
+
+
+
 
 class ExternalDatabaseModel(models.Model):
     class Meta:
@@ -14,7 +21,7 @@ class ExternalDatabaseModel(models.Model):
 
 
 class Schedule(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
 
     class Meta:
@@ -47,7 +54,7 @@ class Schedule(ExternalDatabaseModel):
 
 
 class Activity(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     content_slug = models.CharField(max_length=255)
     schedule_id = models.IntegerField()#ForeignKey(Schedule, on_delete=models.CASCADE, db_column='schedule_id', db_constraint=False)
 
@@ -57,7 +64,7 @@ class Activity(ExternalDatabaseModel):
 
 
 class Device(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     platform = models.CharField(max_length=50)
     os_version = models.CharField(max_length=50)
 
@@ -67,7 +74,7 @@ class Device(ExternalDatabaseModel):
 
 
 class Journey(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     abbreviation = models.CharField(max_length=255)
     joint_slug = models.CharField(max_length=255)
 
@@ -86,7 +93,7 @@ class JourneyActivity(ExternalDatabaseModel):
 
 
 class Patient(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     age_bracket = models.CharField(max_length=50)
     sex = models.CharField(max_length=50)
     hospital = models.CharField(max_length=50)
@@ -97,9 +104,9 @@ class Patient(ExternalDatabaseModel):
 
 
 class PatientJourney(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
-    patient_id = models.ForeignKey(Patient, on_delete=models.CASCADE, db_column='patient_id', db_constraint=False)
-    journey_id = models.ForeignKey(Journey, on_delete=models.CASCADE, db_column='journey_id', db_constraint=False)
+    id = models.IntegerField(primary_key=True)
+    patient_id = models.IntegerField()
+    journey_id = models.IntegerField()
     invitation_date = models.DateField()
     registration_date = models.DateField()
     operation_date = models.DateField()
@@ -123,7 +130,7 @@ class StepResult(ExternalDatabaseModel):
 
 
 class Survey(ExternalDatabaseModel):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
     version = models.CharField(max_length=50)
     tags = ArrayField(models.CharField(max_length=200), blank=True)
@@ -135,10 +142,10 @@ class Survey(ExternalDatabaseModel):
 
 class SurveyResult(ExternalDatabaseModel):
     id = models.AutoField(primary_key=True)
-    patient_journey_id = models.ForeignKey(PatientJourney, on_delete=models.CASCADE, db_column='patient_journey_id', db_constraint=False)
-    survey_id = models.ForeignKey(Survey, on_delete=models.CASCADE, db_column='survey_id', db_constraint=False)
-    activity_id = models.ForeignKey(Activity, on_delete=models.CASCADE, db_column='activity_id', db_constraint=False)
-    device_id = models.ForeignKey(Device, on_delete=models.CASCADE, db_column='device_id', db_constraint=False)
+    patient_journey_id = models.IntegerField()
+    survey_id = models.IntegerField()
+    activity_id = models.IntegerField()
+    device_id = models.IntegerField()
     score_value = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()

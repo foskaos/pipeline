@@ -1,3 +1,8 @@
+# These models actually extract data from the database and are managed by django orm
+# This model is designed to extract the data without distrubing the transactional db too much
+# Incremental loading is preferred to minimize the queries on the transactional db.
+
+
 from django.db import models, transaction
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Func, OuterRef, Subquery, Value, QuerySet, Field
@@ -21,7 +26,7 @@ class IncrementalLog(models.Model):
     step_result_date = models.DateField(null=True)
 
     class Meta:
-        db_table = 'staging_incremental_log'
+        db_table = "public\".\"staging_incremental_log"
 
     def save(self, *args, **kwargs):
         self.id = 1  # Ensure the primary key is always 1
@@ -39,7 +44,7 @@ class StagingScheduleModel(models.Model):
     objects = StagingScheduleManager
 
     class Meta:
-        db_table = 'staging_schedule'
+        db_table = "public\".\"staging_schedule"
 
     @classmethod
     def with_extracted_numbers(cls) -> models.QuerySet:
@@ -80,7 +85,7 @@ class StagingPatientModel(models.Model):
     objects = StagingPatientManager
 
     class Meta:
-        db_table = 'staging_patient'
+        db_table = "public\".\"staging_patient"
 
 
 class StagingActivityModel(models.Model):
@@ -97,7 +102,7 @@ class StagingActivityModel(models.Model):
     objects = StagingActivityManager
 
     class Meta:
-        db_table = 'staging_activity'
+        db_table = "public\".\"staging_activity"
 
 
 class StagingJourneyModel(models.Model):
@@ -113,7 +118,7 @@ class StagingJourneyModel(models.Model):
     objects = StagingJourneyManager
 
     class Meta:
-        db_table = 'staging_journey'
+        db_table = "public\".\"staging_journey"
 
 
 class StagingDeviceModel(models.Model):
@@ -129,7 +134,7 @@ class StagingDeviceModel(models.Model):
     objects = StagingDeviceManager
 
     class Meta:
-        db_table = 'staging_device'
+        db_table = "public\".\"staging_device"
 
 
 class StagingSurveyModel(models.Model):
@@ -146,7 +151,7 @@ class StagingSurveyModel(models.Model):
     objects = StagingSurveyManager
 
     class Meta:
-        db_table = 'staging_survey'
+        db_table = "public\".\"staging_survey"
 
 
 class StagingJourneyActivityModel(models.Model):
@@ -157,11 +162,11 @@ class StagingJourneyActivityModel(models.Model):
     objects = StagingJourneyActivityManager
 
     class Meta:
-        db_table = 'staging_journey_activity'
+        db_table = "public\".\"staging_journey_activity"
 
 
 class StagingPatientJourneyModel(models.Model):
-    # id = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     patient_id = models.IntegerField()
     journey_id = models.IntegerField()
     invitation_date = models.DateField(null=True, blank=True)
@@ -175,7 +180,7 @@ class StagingPatientJourneyModel(models.Model):
     objects = StagingPatientJourneyManager
 
     class Meta:
-        db_table = 'staging_patient_journey'
+        db_table = "public\".\"staging_patient_journey"
 
 
 class StagingStepResultsModel(models.Model):
@@ -193,7 +198,7 @@ class StagingStepResultsModel(models.Model):
     objects = StagingStepResultsManager
 
     class Meta:
-        db_table = 'staging_step_results'
+        db_table = "public\".\"staging_step_results"
 
 
 class StagingSurveyResultsModel(models.Model):
@@ -210,7 +215,7 @@ class StagingSurveyResultsModel(models.Model):
     objects = StagingSurveyResultsManger
 
     class Meta:
-        db_table = 'staging_survey_results'
+        db_table = "public\".\"staging_survey_results"
 
 
 staging_pipeline = [
@@ -220,7 +225,7 @@ staging_pipeline = [
     StagingDeviceModel,
     StagingActivityModel,
     StagingSurveyModel,
-    StagingStepResultsModel,
+    # StagingStepResultsModel,
     StagingJourneyActivityModel,
     StagingPatientJourneyModel,
     StagingSurveyResultsModel

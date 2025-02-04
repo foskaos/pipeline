@@ -26,7 +26,7 @@ class AnalyticsIncrementalLog(AnalyticsModel):
     step_result_date = models.DateField(null=True)
 
     class Meta:
-        db_table = 'incremental_log'
+        db_table = "analytics\".\"incremental_log"
 
     def save(self, *args, **kwargs):
         self.id = 1  # Ensure the primary key is always 1
@@ -46,7 +46,7 @@ class AnalyticsSchedule(AnalyticsModel):
     )
 
     class Meta:
-        db_table = 'schedule'
+        db_table = "analytics\".\"schedule"
 
 
     @classmethod
@@ -88,7 +88,7 @@ class AnalyticsPatient(AnalyticsModel):
     )
 
     class Meta:
-        db_table = 'patient'
+        db_table = "analytics\".\"patient"
 
 
 class AnalyticsActivity(AnalyticsModel):
@@ -103,13 +103,14 @@ class AnalyticsActivity(AnalyticsModel):
         incremental_model=AnalyticsIncrementalLog,
     )
     class Meta:
-        db_table = 'activity'
+        db_table = "analytics\".\"activity"
 
 
 class AnalyticsJourney(AnalyticsModel):
     id = models.IntegerField(primary_key=True)
     abbreviation = models.CharField(max_length=255,blank=True,null=True)
     joint_slug = models.CharField(max_length=255,blank=True,null=True)
+    activities = models.ManyToManyField(AnalyticsActivity, through='AnalyticsJourneyActivity')
 
     objects = IncrementalManager(
         table_key='journey_id',
@@ -119,7 +120,7 @@ class AnalyticsJourney(AnalyticsModel):
     )
 
     class Meta:
-        db_table = 'journey'
+        db_table = "analytics\".\"journey"
 
 
 class AnalyticsDevice(AnalyticsModel):
@@ -135,7 +136,7 @@ class AnalyticsDevice(AnalyticsModel):
     )
 
     class Meta:
-        db_table = 'device'
+        db_table = "analytics\".\"device"
 
 
 class AnalyticsSurvey(AnalyticsModel):
@@ -152,7 +153,7 @@ class AnalyticsSurvey(AnalyticsModel):
     )
 
     class Meta:
-        db_table = 'survey'
+        db_table = "analytics\".\"survey"
 
 
 class AnalyticsJourneyActivity(AnalyticsModel):
@@ -160,10 +161,11 @@ class AnalyticsJourneyActivity(AnalyticsModel):
     activity_id = models.ForeignKey(AnalyticsActivity, db_column='activity_id', on_delete=models.SET_NULL, null=True, blank=True)
     objects = FullLoadManager(table_model=StagingJourneyActivityModel)
     class Meta:
-        db_table = 'journey_activity'
+        db_table = "analytics\".\"journey_activity"
 
 
 class AnalyticsPatientJourney(AnalyticsModel):
+    id = models.IntegerField(primary_key=True)
     patient_id = models.ForeignKey(AnalyticsPatient, db_column='patient_id', on_delete=models.SET_NULL, null=True, blank=True)
     journey_id = models.ForeignKey(AnalyticsJourney, db_column='journey_id', on_delete=models.SET_NULL, null=True, blank=True)
     invitation_date = models.DateField(null=True, blank=True)
@@ -176,7 +178,7 @@ class AnalyticsPatientJourney(AnalyticsModel):
 
 
     class Meta:
-        db_table = 'patient_journey'
+        db_table = "analytics\".\"patient_journey"
 
 
 class AnalyticsStepResults(AnalyticsModel):
@@ -187,12 +189,12 @@ class AnalyticsStepResults(AnalyticsModel):
     objects = IncrementalManager(
         table_key='step_result_date',
         table_model=StagingStepResultsModel,
-        incremental_key='data',
+        incremental_key='date',
         incremental_model=AnalyticsIncrementalLog,
     )
 
     class Meta:
-        db_table = 'step_results'
+        db_table = "analytics\".\"step_results"
 
 
 class AnalyticsSurveyResults(AnalyticsModel):
@@ -205,21 +207,21 @@ class AnalyticsSurveyResults(AnalyticsModel):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
-    StagingSurveyResultsManger = FullLoadManager(table_model=StagingSurveyResultsModel)
+    objects = FullLoadManager(table_model=StagingSurveyResultsModel)
 
     class Meta:
-        db_table = 'survey_results'
+        db_table = "analytics\".\"survey_results"
 
 
 analytics_pipeline = [
     AnalyticsSchedule,
     AnalyticsJourney,
     AnalyticsPatient,
-    # AnalyticsDevice,
-    # AnalyticsActivity,
-    # AnalyticsSurvey,
+    AnalyticsDevice,
+    AnalyticsActivity,
+    AnalyticsSurvey,
     # AnalyticsStepResults,
-    # AnalyticsJourneyActivity,
-    # AnalyticsPatientJourney,
-    # AnalyticsSurveyResults,
+    AnalyticsJourneyActivity,
+    AnalyticsPatientJourney,
+    AnalyticsSurveyResults,
 ]
