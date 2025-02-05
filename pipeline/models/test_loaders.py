@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from django.db import transaction
 from types import SimpleNamespace
 
-from .analytics import AnalyticsScheduleWindow,AnalyticsSchedule,AnalyticsActivity
+from .analytics import AnalyticsScheduleWindow, AnalyticsSchedule, AnalyticsActivity
 from .loaders import (
     FullLoadManager,
     IncrementalLoadManager,
@@ -12,6 +12,7 @@ from .loaders import (
     ScheduleWindowTransformer
 )
 from .staging import StagingScheduleModel, IncrementalLog
+
 
 @pytest.mark.django_db
 def test_full_load_manager():
@@ -29,6 +30,7 @@ def test_full_load_manager():
 
         assert StagingScheduleModel.objects.count() == 1
         assert StagingScheduleModel.objects.first().slug == "test-schedule"
+
 
 @pytest.mark.django_db
 def test_incremental_load_manager():
@@ -87,7 +89,6 @@ def test_incremental_transform_load_manager():
         assert staged.schedule_offset_end == 10
 
 
-
 @pytest.mark.django_db
 def test_data_loader_batch_loader():
     """Ensure DataLoader's batch_loader processes batches correctly
@@ -101,6 +102,7 @@ def test_data_loader_batch_loader():
     manager.model = StagingScheduleModel
 
     counter = iter(range(1, 101))
+
     def mock_build_output_object(*args, **kwargs):
         return StagingScheduleModel(id=next(counter), slug='test-schedule')
 
@@ -108,13 +110,15 @@ def test_data_loader_batch_loader():
 
     with patch.object(manager.model.objects, 'bulk_create') as mock_bulk_create:
         with transaction.atomic():
-            manager.batch_loader(10, mock_instance, iter([mock_instance] * 49), mock_related_lookup, mock_related_fields)
+            manager.batch_loader(10, mock_instance, iter([mock_instance] * 49), mock_related_lookup,
+                                 mock_related_fields)
 
         assert mock_bulk_create.call_count == 5
 
         for call in mock_bulk_create.call_args_list:
             batch = call[0][0]
             assert len(batch) == 10
+
 
 @pytest.mark.django_db
 def test_data_loader_missing_relations():
@@ -129,7 +133,7 @@ def test_data_loader_missing_relations():
     mock_related_fields = [
         SimpleNamespace(name='schedule_id',
                         related_model=AnalyticsSchedule,
-                        related_fields=[(None, 'id'),],
+                        related_fields=[(None, 'id'), ],
                         many_to_many=False)
     ]
     mock_related_lookup = {'AnalyticsSchedule': {}}
