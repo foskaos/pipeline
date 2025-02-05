@@ -14,8 +14,7 @@ Essential commands provided in a Makefile
 
 ### 1. Clone the Repository
 ```
-git clone <repository-url>
-cd <project-directory>
+git clone https://github.com/foskaos/pipeline
 ```
 
 ### 2. Prepare the Database
@@ -41,27 +40,27 @@ SECRET_KEY=supersecretkey
 
 ### 4. Build and Start the Containers
 Run the following command to build and start the containers:
-```bash
+```
 docker-compose up --build
 ```
 This will also run the migration which creates all the neccessary tables in the database.
 Also sets up an hourly cron job
 
-### 5. Access the Web Container
-To enter the web container's shell, open another terminal and run:
-```bash
+### 5. Access the Container
+To enter the container's shell, open another terminal and run (the container is just called 'web':
+```
 docker-compose exec web bash
 ```
 
 ### 7. Run the tests
 Execute the following command inside the web container to run the pipeline:
-```bash
+```
 make test
 ```
 
 ### 7. Run the Pipeline
 Execute the following command inside the web container to run the pipeline:
-```bash
+```
 make run-pipeline
 ```
 
@@ -82,3 +81,12 @@ This project consists of two main containers:
 - To check which survey results were created in time, we could do make new table. It would have a conditional field base on the milestone slug to get the milestone date. The actual date window could be found from this. Then we could join the survey results based on this window and produce a list of patient activities that were compled in the schedule window
 - As this is already dockerized, we could simply run ```make test``` in the container. The CI/CD pipeline could be configured to run this on every merge request
 - WAY more testing. (Schedule slug transformer)
+
+
+## Troubleshooting
+
+- you may need to set up the provided data manually, but there is a docker command for this:
+```
+docker-compose run sql
+```
+
