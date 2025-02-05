@@ -1,3 +1,6 @@
+# this would be the set of models/table that are exposed to analysts
+# It is still imcomplete and many insights and cleaning operations would be of benefit
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Func, OuterRef, Subquery, Value, QuerySet, F
@@ -31,7 +34,7 @@ class AnalyticsIncrementalLog(AnalyticsModel):
         db_table = "incremental_log"
 
     def save(self, *args, **kwargs):
-        self.id = 1  # Ensure the primary key is always 1
+        self.id = 1
         super().save(*args, **kwargs)
 
 
@@ -242,29 +245,26 @@ class AnalyticsPatientJourneyScheduleWindow(AnalyticsModel):
     @staticmethod
     def loader_query():
         return AnalyticsPatientJourney.objects.annotate(
-            # Rename the patient journey’s id so we have a patient_journey_id column
             patient_journey_id=F('id'),
-            # From the journey (FK field named `journey_id` on AnalyticsPatientJourney)
-            # traverse the many-to-many to get the activity id
             activity_id=F('journey_id__activities__id'),
             activity_content_slug=F('journey_id__activities__content_slug'),
-            # the schedule id is on the activity
+
             schedule_id=F('journey_id__activities__schedule_id'),
             schedule_slug=F('journey_id__activities__schedule_id__slug'),
-            # From the schedule, follow the one-to-one relation to its schedule window
+
             schedule_start_offset_days=F('journey_id__activities__schedule_id__schedule_window__schedule_offset_start'),
             schedule_end_offset_days=F('journey_id__activities__schedule_id__schedule_window__schedule_offset_end'),
             schedule_milestone_slug=F('journey_id__activities__schedule_id__schedule_window__schedule_milestone_slug')
         ).values(
-            'patient_id',  # AnalyticsPatientJourney.patient_id (FK)
-            'patient_journey_id',  # the annotated primary key of the journey record
-            'activity_id',  # id from AnalyticsActivity
+            'patient_id',
+            'patient_journey_id',
+            'activity_id',
             'activity_content_slug',
-            'schedule_id',  # id from AnalyticsSchedule (on the Activity)
+            'schedule_id',
             'schedule_slug',
-            'schedule_start_offset_days',  # from AnalyticsScheduleWindow
-            'schedule_end_offset_days',  # from AnalyticsScheduleWindow
-            'schedule_milestone_slug'  # using the schedule_window’s milestone slug field
+            'schedule_start_offset_days'
+            'schedule_end_offset_days',
+            'schedule_milestone_slug'
         ).iterator()
 
     objects = FullLoadQueryManager(table_model=AnalyticsPatientJourney,

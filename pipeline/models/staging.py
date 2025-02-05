@@ -29,14 +29,13 @@ class IncrementalLog(models.Model):
         db_table = "staging_incremental_log"
 
     def save(self, *args, **kwargs):
-        self.id = 1  # Ensure the primary key is always 1
+        self.id = 1
         super().save(*args, **kwargs)
 
 
 class StagingScheduleModel(models.Model):
     id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
-    # extracted_numbers = ArrayField(models.CharField(max_length=200,default=None), blank=True, default=list)
     StagingScheduleManager = IncrementalLoadManager(table_key='schedule_id',
                                                     table_model=Schedule,
                                                     incremental_key='id',
@@ -46,29 +45,6 @@ class StagingScheduleModel(models.Model):
     class Meta:
         db_table = "staging_schedule"
 
-    @classmethod
-    def with_extracted_numbers(cls) -> models.QuerySet:
-        """
-        Annotates each Schedule instance with an array of numbers extracted from `slug`
-        using PostgreSQL's `regexp_matches()`, ensuring rows with no matches are included.
-        """
-
-        class RegexpMatches(Func):
-            function = 'REGEXP_MATCHES'
-            arity = 2  # Requires two arguments (column, regex pattern)
-
-        extracted_numbers_subquery = (
-            cls.objects.filter(id=OuterRef("id"))
-            .annotate(matches=RegexpMatches("slug", Value(r"(\d+[dwmy])(?:-(\d+[dwmy]))*(?:-(.*))")))
-            .values("matches")  # Extract only the matches column
-        )
-
-        return cls.objects.annotate(
-            extracted_numbers=Coalesce(
-                Subquery(extracted_numbers_subquery,
-                         output_field=ArrayField(models.CharField(max_length=255), default=list)),
-                Value([])
-            ))
 
 
 class StagingPatientModel(models.Model):
@@ -91,8 +67,7 @@ class StagingPatientModel(models.Model):
 class StagingActivityModel(models.Model):
     id = models.IntegerField(primary_key=True)
     content_slug = models.CharField(max_length=255, blank=True)
-    schedule_id = models.IntegerField(
-        blank=True)  # ForeignKey(StagingScheduleModel, db_column='schedule_id', on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    schedule_id = models.IntegerField(blank=True)
 
     StagingActivityManager = IncrementalLoadManager(table_key='activity_id',
                                                     table_model=Activity,

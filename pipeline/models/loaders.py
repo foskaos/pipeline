@@ -286,7 +286,6 @@ class IncrementalLoadManager(DataLoader):
                 instances = self.table_model.objects.all().order_by(self.incremental_key).values(
                     *source_fields).iterator()
             else:
-                # logger.info(f'Loading values greater than {last_loaded_id}')
                 instances = self.table_model.objects.filter(
                     **{f"{self.incremental_key}__gt": last_loaded_id}
                 ).order_by(self.incremental_key).values(*source_fields).iterator()
@@ -348,8 +347,6 @@ class IncrementalTransformLoadManager(IncrementalLoadManager):
                 self.log.append(error_log)
                 related_obj = None
             instance[fld.name] = related_obj
-
-        # add extra stuff here
 
         if self.transformer:
 
