@@ -36,6 +36,7 @@ def test_incremental_log_defaults():
 
 @pytest.mark.django_db(databases=['msk_db','default'])
 def test_staging_models_incremental_load():
+    """tests incremental loading"""
     mock_data = {
         'id': 1,
         'age_bracket': "Adult",

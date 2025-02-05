@@ -170,7 +170,7 @@ class AnalyticsStepResults(AnalyticsModel):
                                    blank=True)
     date = models.DateField()
     value = models.IntegerField()
-
+    # WARNING: We are assuming that steps are loaded once per day, so we can load incrementally on date
     objects = IncrementalLoadManager(
         table_key='step_result_date',
         table_model=StagingStepResultsModel,
@@ -262,7 +262,7 @@ class AnalyticsPatientJourneyScheduleWindow(AnalyticsModel):
             'activity_content_slug',
             'schedule_id',
             'schedule_slug',
-            'schedule_start_offset_days'
+            'schedule_start_offset_days',
             'schedule_end_offset_days',
             'schedule_milestone_slug'
         ).iterator()

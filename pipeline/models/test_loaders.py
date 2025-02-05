@@ -100,25 +100,21 @@ def test_data_loader_batch_loader():
     manager = DataLoader()
     manager.model = StagingScheduleModel
 
-    counter = iter(range(1, 101))  # Create an iterator for unique IDs
-
+    counter = iter(range(1, 101))
     def mock_build_output_object(*args, **kwargs):
         return StagingScheduleModel(id=next(counter), slug='test-schedule')
 
     manager.build_output_object = MagicMock(side_effect=mock_build_output_object)
 
-    # Mock bulk_create to track calls
     with patch.object(manager.model.objects, 'bulk_create') as mock_bulk_create:
         with transaction.atomic():
             manager.batch_loader(10, mock_instance, iter([mock_instance] * 49), mock_related_lookup, mock_related_fields)
 
-        # Validate bulk_create was called
-        assert mock_bulk_create.call_count == 5  # 50 instances / batch size 10 = 5 calls
+        assert mock_bulk_create.call_count == 5
 
-        # Validate the batch sizes
         for call in mock_bulk_create.call_args_list:
-            batch = call[0][0]  # The first argument to bulk_create (list of instances)
-            assert len(batch) == 10  # Each batch should contain 10 records
+            batch = call[0][0]
+            assert len(batch) == 10
 
 @pytest.mark.django_db
 def test_data_loader_missing_relations():
@@ -130,14 +126,13 @@ def test_data_loader_missing_relations():
         'content_slug': 'ms',
     }
 
-    # Simulating foreign key relation setup
     mock_related_fields = [
         SimpleNamespace(name='schedule_id',
                         related_model=AnalyticsSchedule,
                         related_fields=[(None, 'id'),],
                         many_to_many=False)
     ]
-    mock_related_lookup = {'AnalyticsSchedule': {}}  # No valid related objects
+    mock_related_lookup = {'AnalyticsSchedule': {}}
 
     manager = DataLoader()
     manager.model = AnalyticsActivity
@@ -146,8 +141,6 @@ def test_data_loader_missing_relations():
         with transaction.atomic():
             manager.batch_loader(10, mock_instance, iter([]), mock_related_lookup, mock_related_fields)
 
-        # Since the relation is missing, bulk_create should NOT be called
         assert mock_bulk_create.call_count == 1
 
-    # Ensure nothing was inserted due to missing relation
     assert AnalyticsActivity.objects.count() == 0
