@@ -80,7 +80,7 @@ This project consists of two main containers:
 - The ```patient_journey_schedule_window``` table is quite large, it would be good to make an incremental loader for it, perhaps using hasing?
 - To check which survey results were created in time, we could do make new table. It would have a conditional field base on the milestone slug to get the milestone date. The actual date window could be found from this. Then we could join the survey results based on this window and produce a list of patient activities that were compled in the schedule window
 - As this is already dockerized, we could simply run ```make test``` in the container. The CI/CD pipeline could be configured to run this on every merge request
-- WAY more testing. (Schedule slug transformer)
+- WAY more testing. (Schedule slug transformer, PatientActivityScheduleWindow query, etc. etc.)
 - Nice run logs would be good. Started to create some structured logs, but ran out of time!
 
 
