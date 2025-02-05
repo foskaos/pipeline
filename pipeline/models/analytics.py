@@ -1,17 +1,17 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Func, OuterRef, Subquery, Value, QuerySet
+from django.db.models import Func, OuterRef, Subquery, Value, QuerySet, F
 from django.db.models.functions import Coalesce
 from .staging import (StagingScheduleModel, StagingJourneyModel, StagingPatientModel, StagingDeviceModel,
                       StagingActivityModel, StagingSurveyModel, StagingStepResultsModel, StagingJourneyActivityModel,
                       StagingPatientJourneyModel, StagingSurveyResultsModel)
-from .loaders import FullLoadManager, IncrementalManager
+from .loaders import FullLoadManager, IncrementalLoadManager,IncrementalTransformLoadManager,ScheduleWindowTransformer, FullLoadQueryManager
 
 
 class AnalyticsModel(models.Model):
     class Meta:
         abstract = True
-        app_label = "analytics_db"
+        app_label = "pipeline"
 
 
 class AnalyticsIncrementalLog(AnalyticsModel):
@@ -24,9 +24,11 @@ class AnalyticsIncrementalLog(AnalyticsModel):
     device_id = models.IntegerField(default=0)
     survey_id = models.IntegerField(default=0)
     step_result_date = models.DateField(null=True)
+    schedule_window = models.IntegerField(null=True, default=0)
+
 
     class Meta:
-        db_table = "analytics\".\"incremental_log"
+        db_table = "incremental_log"
 
     def save(self, *args, **kwargs):
         self.id = 1  # Ensure the primary key is always 1
@@ -36,9 +38,8 @@ class AnalyticsIncrementalLog(AnalyticsModel):
 class AnalyticsSchedule(AnalyticsModel):
     id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
-    # extracted_numbers = ArrayField(models.CharField(max_length=200,default=None), blank=True, default=list)
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='schedule_id',
         table_model=StagingScheduleModel,
         incremental_key='id',
@@ -46,33 +47,7 @@ class AnalyticsSchedule(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"schedule"
-
-
-    @classmethod
-    def with_extracted_numbers(cls) -> models.QuerySet:
-        """
-        Annotates each Schedule instance with an array of numbers extracted from `slug`
-        using PostgreSQL's `regexp_matches()`, ensuring rows with no matches are included.
-        """
-
-
-        class RegexpMatches(Func):
-            function = 'REGEXP_MATCHES'
-            arity = 2  # Requires two arguments (column, regex pattern)
-
-        extracted_numbers_subquery = (
-            cls.objects.filter(id=OuterRef("id"))
-            .annotate(matches=RegexpMatches("slug", Value(r"(\d+[dwmy])(?:-(\d+[dwmy]))*(?:-(.*))")))
-            .values("matches")  # Extract only the matches column
-        )
-
-        return cls.objects.annotate(
-            extracted_numbers=Coalesce(
-                Subquery(extracted_numbers_subquery,
-                         output_field=ArrayField(models.CharField(max_length=255), default=list)),
-                Value([])
-            ))
+        db_table = "schedule"
 
 
 class AnalyticsPatient(AnalyticsModel):
@@ -80,7 +55,7 @@ class AnalyticsPatient(AnalyticsModel):
     age_bracket = models.CharField(max_length=255, blank=True, null=True)
     sex = models.CharField(max_length=255, blank=True, null=True)
     hospital = models.CharField(max_length=255, blank=True, null=True)
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='patient_id',
         table_model=StagingPatientModel,
         incremental_key='id',
@@ -88,7 +63,7 @@ class AnalyticsPatient(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"patient"
+        db_table = "patient"
 
 
 class AnalyticsActivity(AnalyticsModel):
@@ -96,14 +71,15 @@ class AnalyticsActivity(AnalyticsModel):
     content_slug = models.CharField(max_length=255, blank=True)
     schedule_id = models.ForeignKey(AnalyticsSchedule, db_column='schedule_id', on_delete=models.SET_NULL, null=True, blank=True, default=None)
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='activity_id',
         table_model=StagingActivityModel,
         incremental_key='id',
         incremental_model=AnalyticsIncrementalLog,
     )
+
     class Meta:
-        db_table = "analytics\".\"activity"
+        db_table = "activity"
 
 
 class AnalyticsJourney(AnalyticsModel):
@@ -112,7 +88,7 @@ class AnalyticsJourney(AnalyticsModel):
     joint_slug = models.CharField(max_length=255,blank=True,null=True)
     activities = models.ManyToManyField(AnalyticsActivity, through='AnalyticsJourneyActivity')
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='journey_id',
         table_model=StagingJourneyModel,
         incremental_key='id',
@@ -120,7 +96,7 @@ class AnalyticsJourney(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"journey"
+        db_table = "journey"
 
 
 class AnalyticsDevice(AnalyticsModel):
@@ -128,7 +104,7 @@ class AnalyticsDevice(AnalyticsModel):
     platform = models.CharField(max_length=50, blank=True)
     os_version = models.CharField(max_length=50, blank=True)
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='device_id',
         table_model=StagingDeviceModel,
         incremental_key='id',
@@ -136,7 +112,7 @@ class AnalyticsDevice(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"device"
+        db_table = "device"
 
 
 class AnalyticsSurvey(AnalyticsModel):
@@ -145,7 +121,7 @@ class AnalyticsSurvey(AnalyticsModel):
     version = models.CharField(max_length=50, blank=True)
     tags = ArrayField(models.CharField(max_length=200, blank=True), blank=True, default=list, null=True)
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='survey_id',
         table_model=StagingSurveyModel,
         incremental_key='id',
@@ -153,15 +129,16 @@ class AnalyticsSurvey(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"survey"
+        db_table = "survey"
 
 
 class AnalyticsJourneyActivity(AnalyticsModel):
     journey_id = models.ForeignKey(AnalyticsJourney, db_column='journey_id', on_delete=models.SET_NULL, null=True, blank=True)
     activity_id = models.ForeignKey(AnalyticsActivity, db_column='activity_id', on_delete=models.SET_NULL, null=True, blank=True)
     objects = FullLoadManager(table_model=StagingJourneyActivityModel)
+
     class Meta:
-        db_table = "analytics\".\"journey_activity"
+        db_table = "journey_activity"
 
 
 class AnalyticsPatientJourney(AnalyticsModel):
@@ -176,9 +153,8 @@ class AnalyticsPatientJourney(AnalyticsModel):
     clinician_id = models.IntegerField(null=True, blank=True)
     objects = FullLoadManager(table_model=StagingPatientJourneyModel)
 
-
     class Meta:
-        db_table = "analytics\".\"patient_journey"
+        db_table = "patient_journey"
 
 
 class AnalyticsStepResults(AnalyticsModel):
@@ -186,7 +162,7 @@ class AnalyticsStepResults(AnalyticsModel):
     date = models.DateField()
     value = models.IntegerField()
 
-    objects = IncrementalManager(
+    objects = IncrementalLoadManager(
         table_key='step_result_date',
         table_model=StagingStepResultsModel,
         incremental_key='date',
@@ -194,7 +170,7 @@ class AnalyticsStepResults(AnalyticsModel):
     )
 
     class Meta:
-        db_table = "analytics\".\"step_results"
+        db_table = "step_results"
 
 
 class AnalyticsSurveyResults(AnalyticsModel):
@@ -210,11 +186,83 @@ class AnalyticsSurveyResults(AnalyticsModel):
     objects = FullLoadManager(table_model=StagingSurveyResultsModel)
 
     class Meta:
-        db_table = "analytics\".\"survey_results"
+        db_table = "survey_results"
 
+
+class AnalyticsScheduleWindow(AnalyticsModel):
+    id = models.AutoField(primary_key=True)
+    schedule = models.OneToOneField(
+        AnalyticsSchedule,
+        on_delete=models.CASCADE,
+        related_name='schedule_window'
+    )
+    schedule_milestone_slug = models.CharField(max_length=255)
+    schedule_offset_start = models.IntegerField()
+    # allowing for null end offset where the schedule is of indefinite length
+    schedule_offset_end = models.IntegerField(blank=True, null=True)
+
+    objects = IncrementalTransformLoadManager(
+        table_key='schedule_window',
+        table_model=AnalyticsSchedule,
+        incremental_key='id',
+        incremental_model=AnalyticsIncrementalLog,
+        transformer=ScheduleWindowTransformer()
+        )
+
+    class Meta:
+        db_table = "schedule_window"
+
+
+class AnalyticsPatientJourneyScheduleWindow(AnalyticsModel):
+    id = models.AutoField(primary_key=True)
+    patient_id = models.ForeignKey(AnalyticsPatient, db_column='patient_id', on_delete=models.SET_NULL, null=True, blank=True)
+    patient_journey_id = models.ForeignKey(AnalyticsPatientJourney, db_column='patient_journey_id',on_delete=models.SET_NULL, null=True, blank=True)
+    activity_id = models.ForeignKey(AnalyticsActivity, db_column='activity_id', on_delete=models.SET_NULL, null=True, blank=True)
+    activity_content_slug = models.CharField(max_length=255, blank=True, null=True)
+    schedule_id = models.ForeignKey(AnalyticsSchedule, db_column='schedule_id', on_delete=models.SET_NULL, null=True, blank=True)
+    schedule_slug = models.CharField(max_length=255, blank=True, null=True)
+    schedule_start_offset_days = models.IntegerField(blank=True, null=True)
+    schedule_end_offset_days = models.IntegerField(blank=True, null=True)
+    schedule_milestone_slug = models.CharField(max_length=255, blank=True, null=True)
+
+    @staticmethod
+    def loader_query():
+        return AnalyticsPatientJourney.objects.annotate(
+            # Rename the patient journey’s id so we have a patient_journey_id column
+            patient_journey_id=F('id'),
+            # From the journey (FK field named `journey_id` on AnalyticsPatientJourney)
+            # traverse the many-to-many to get the activity id
+            activity_id=F('journey_id__activities__id'),
+            activity_content_slug=F('journey_id__activities__content_slug'),
+            # the schedule id is on the activity
+            schedule_id=F('journey_id__activities__schedule_id'),
+            schedule_slug=F('journey_id__activities__schedule_id__slug'),
+            # From the schedule, follow the one-to-one relation to its schedule window
+            schedule_start_offset_days=F('journey_id__activities__schedule_id__schedule_window__schedule_offset_start'),
+            schedule_end_offset_days=F('journey_id__activities__schedule_id__schedule_window__schedule_offset_end'),
+            schedule_milestone_slug=F('journey_id__activities__schedule_id__schedule_window__schedule_milestone_slug')
+        ).values(
+            'patient_id',  # AnalyticsPatientJourney.patient_id (FK)
+            'patient_journey_id',  # the annotated primary key of the journey record
+            'activity_id',  # id from AnalyticsActivity
+            'activity_content_slug',
+            'schedule_id',  # id from AnalyticsSchedule (on the Activity)
+            'schedule_slug',
+            'schedule_start_offset_days',  # from AnalyticsScheduleWindow
+            'schedule_end_offset_days',  # from AnalyticsScheduleWindow
+            'schedule_milestone_slug'  # using the schedule_window’s milestone slug field
+        ).iterator()
+
+    objects = FullLoadQueryManager(table_model=AnalyticsPatientJourney,
+                                   query=loader_query)
+
+
+    class Meta:
+        db_table = "patient_journey_schedule_window"
 
 analytics_pipeline = [
     AnalyticsSchedule,
+    AnalyticsScheduleWindow,
     AnalyticsJourney,
     AnalyticsPatient,
     AnalyticsDevice,
@@ -224,4 +272,5 @@ analytics_pipeline = [
     AnalyticsJourneyActivity,
     AnalyticsPatientJourney,
     AnalyticsSurveyResults,
+    AnalyticsPatientJourneyScheduleWindow
 ]

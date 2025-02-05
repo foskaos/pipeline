@@ -11,7 +11,7 @@ from .core import Schedule, Journey, Activity, Patient, Device, Survey, JourneyA
     SurveyResult
 import datetime
 from typing import Iterable
-from .loaders import FullLoadManager, IncrementalManager
+from .loaders import IncrementalLoadManager, FullLoadManager
 
 
 class IncrementalLog(models.Model):
@@ -26,7 +26,7 @@ class IncrementalLog(models.Model):
     step_result_date = models.DateField(null=True)
 
     class Meta:
-        db_table = "public\".\"staging_incremental_log"
+        db_table = "staging_incremental_log"
 
     def save(self, *args, **kwargs):
         self.id = 1  # Ensure the primary key is always 1
@@ -37,14 +37,14 @@ class StagingScheduleModel(models.Model):
     id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
     # extracted_numbers = ArrayField(models.CharField(max_length=200,default=None), blank=True, default=list)
-    StagingScheduleManager = IncrementalManager(table_key='schedule_id',
+    StagingScheduleManager = IncrementalLoadManager(table_key='schedule_id',
                                                 table_model=Schedule,
                                                 incremental_key='id',
                                                 incremental_model=IncrementalLog)
     objects = StagingScheduleManager
 
     class Meta:
-        db_table = "public\".\"staging_schedule"
+        db_table = "staging_schedule"
 
     @classmethod
     def with_extracted_numbers(cls) -> models.QuerySet:
@@ -77,7 +77,7 @@ class StagingPatientModel(models.Model):
     sex = models.CharField(max_length=255, blank=True, null=True)
     hospital = models.CharField(max_length=255, blank=True, null=True)
 
-    StagingPatientManager = IncrementalManager(table_key='patient_id',
+    StagingPatientManager = IncrementalLoadManager(table_key='patient_id',
                                                table_model=Patient,
                                                incremental_key='id',
                                                incremental_model=IncrementalLog)
@@ -85,7 +85,7 @@ class StagingPatientModel(models.Model):
     objects = StagingPatientManager
 
     class Meta:
-        db_table = "public\".\"staging_patient"
+        db_table = "staging_patient"
 
 
 class StagingActivityModel(models.Model):
@@ -94,7 +94,7 @@ class StagingActivityModel(models.Model):
     schedule_id = models.IntegerField(
         blank=True)  # ForeignKey(StagingScheduleModel, db_column='schedule_id', on_delete=models.SET_NULL, null=True, blank=True, default=None)
 
-    StagingActivityManager = IncrementalManager(table_key='activity_id',
+    StagingActivityManager = IncrementalLoadManager(table_key='activity_id',
                                                 table_model=Activity,
                                                 incremental_key='id',
                                                 incremental_model=IncrementalLog)
@@ -102,7 +102,7 @@ class StagingActivityModel(models.Model):
     objects = StagingActivityManager
 
     class Meta:
-        db_table = "public\".\"staging_activity"
+        db_table = "staging_activity"
 
 
 class StagingJourneyModel(models.Model):
@@ -110,7 +110,7 @@ class StagingJourneyModel(models.Model):
     abbreviation = models.CharField(max_length=255, blank=True, null=True)
     joint_slug = models.CharField(max_length=255, blank=True, null=True)
 
-    StagingJourneyManager = IncrementalManager(table_key='journey_id',
+    StagingJourneyManager = IncrementalLoadManager(table_key='journey_id',
                                                table_model=Journey,
                                                incremental_key='id',
                                                 incremental_model=IncrementalLog)
@@ -118,7 +118,7 @@ class StagingJourneyModel(models.Model):
     objects = StagingJourneyManager
 
     class Meta:
-        db_table = "public\".\"staging_journey"
+        db_table = "staging_journey"
 
 
 class StagingDeviceModel(models.Model):
@@ -127,14 +127,14 @@ class StagingDeviceModel(models.Model):
     platform = models.CharField(max_length=50, blank=True)
     os_version = models.CharField(max_length=50, blank=True)
 
-    StagingDeviceManager = IncrementalManager(table_key='device_id',
+    StagingDeviceManager = IncrementalLoadManager(table_key='device_id',
                                               table_model=Device,
                                               incremental_key='id',
                                                 incremental_model=IncrementalLog)
     objects = StagingDeviceManager
 
     class Meta:
-        db_table = "public\".\"staging_device"
+        db_table = "staging_device"
 
 
 class StagingSurveyModel(models.Model):
@@ -143,7 +143,7 @@ class StagingSurveyModel(models.Model):
     version = models.CharField(max_length=50, blank=True)
     tags = ArrayField(models.CharField(max_length=200, blank=True), blank=True, default=list, null=True)
 
-    StagingSurveyManager = IncrementalManager(table_key='survey_id',
+    StagingSurveyManager = IncrementalLoadManager(table_key='survey_id',
                                               table_model=Survey,
                                               incremental_key='id',
                                                 incremental_model=IncrementalLog)
@@ -151,7 +151,7 @@ class StagingSurveyModel(models.Model):
     objects = StagingSurveyManager
 
     class Meta:
-        db_table = "public\".\"staging_survey"
+        db_table = "staging_survey"
 
 
 class StagingJourneyActivityModel(models.Model):
@@ -162,7 +162,7 @@ class StagingJourneyActivityModel(models.Model):
     objects = StagingJourneyActivityManager
 
     class Meta:
-        db_table = "public\".\"staging_journey_activity"
+        db_table = "staging_journey_activity"
 
 
 class StagingPatientJourneyModel(models.Model):
@@ -180,7 +180,7 @@ class StagingPatientJourneyModel(models.Model):
     objects = StagingPatientJourneyManager
 
     class Meta:
-        db_table = "public\".\"staging_patient_journey"
+        db_table = "staging_patient_journey"
 
 
 class StagingStepResultsModel(models.Model):
@@ -189,7 +189,7 @@ class StagingStepResultsModel(models.Model):
     value = models.IntegerField()
 
     # StagingStepResultsManager = FullLoadStagingManager(table_model=StepResult)
-    StagingStepResultsManager = IncrementalManager(
+    StagingStepResultsManager = IncrementalLoadManager(
         table_key='step_result_date',
         table_model=StepResult,
         incremental_key='date',
@@ -198,7 +198,7 @@ class StagingStepResultsModel(models.Model):
     objects = StagingStepResultsManager
 
     class Meta:
-        db_table = "public\".\"staging_step_results"
+        db_table = "staging_step_results"
 
 
 class StagingSurveyResultsModel(models.Model):
@@ -215,7 +215,7 @@ class StagingSurveyResultsModel(models.Model):
     objects = StagingSurveyResultsManger
 
     class Meta:
-        db_table = "public\".\"staging_survey_results"
+        db_table = "staging_survey_results"
 
 
 staging_pipeline = [

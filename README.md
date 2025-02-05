@@ -21,6 +21,7 @@ docker cp msk_db.sql postgres_db:/msk_db.sql
 enter container
 docker exec -it postgres_db psql -U msk_user -d msk_database
 create database 
+create analytics schema
 
 docker exec -it postgres_db psql -U msk_user -d msk_db -f /msk_db.sql
 copy file

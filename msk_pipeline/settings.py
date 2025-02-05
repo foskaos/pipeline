@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
-
+import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -74,6 +74,23 @@ WSGI_APPLICATION = 'msk_pipeline.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DATABASE_SCHEMA_EDITORS = {
+    'default': 'django.db.backends.postgresql.schema.DatabaseSchemaEditor',
+}
+
+if "test" in sys.argv or "pytest" in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'test_msk_db',  # Simplified test DB name
+            'USER': os.getenv("POSTGRES_USER"),
+            'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
+            'HOST': os.getenv("POSTGRES_HOST", "db"),
+            'PORT': os.getenv("POSTGRES_PORT", 5432),
+        }
+    }
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -85,6 +102,9 @@ DATABASES = {
         "OPTIONS": {
                     "options": "-c search_path=public,analytics"
                 },
+        'TEST': {
+            'TEMPLATE': 'template0'
+        }
     },
 
     "msk_db": {
@@ -94,9 +114,18 @@ DATABASES = {
         "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
         "HOST": os.getenv("POSTGRES_HOST", "db"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
-    },
+        #
+        # 'TEST': {
+        #     'NAME': 'test_msk_db'
+        # },
+    }
+    }
 
-}
+
+
+# if "test" in sys.argv or "pytest" in sys.argv:
+#     DATABASES["default"]["NAME"] = "test_msk_database"
+
 
 DATABASE_ROUTERS = ["msk_pipeline.db_router.MSKDatabaseRouter"]
 # DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
