@@ -29,46 +29,22 @@ class IncrementalLog(models.Model):
         db_table = "staging_incremental_log"
 
     def save(self, *args, **kwargs):
-        self.id = 1  # Ensure the primary key is always 1
+        self.id = 1
         super().save(*args, **kwargs)
 
 
 class StagingScheduleModel(models.Model):
     id = models.IntegerField(primary_key=True)
     slug = models.CharField(max_length=255)
-    # extracted_numbers = ArrayField(models.CharField(max_length=200,default=None), blank=True, default=list)
     StagingScheduleManager = IncrementalLoadManager(table_key='schedule_id',
-                                                table_model=Schedule,
-                                                incremental_key='id',
-                                                incremental_model=IncrementalLog)
+                                                    table_model=Schedule,
+                                                    incremental_key='id',
+                                                    incremental_model=IncrementalLog)
     objects = StagingScheduleManager
 
     class Meta:
         db_table = "staging_schedule"
 
-    @classmethod
-    def with_extracted_numbers(cls) -> models.QuerySet:
-        """
-        Annotates each Schedule instance with an array of numbers extracted from `slug`
-        using PostgreSQL's `regexp_matches()`, ensuring rows with no matches are included.
-        """
-
-        class RegexpMatches(Func):
-            function = 'REGEXP_MATCHES'
-            arity = 2  # Requires two arguments (column, regex pattern)
-
-        extracted_numbers_subquery = (
-            cls.objects.filter(id=OuterRef("id"))
-            .annotate(matches=RegexpMatches("slug", Value(r"(\d+[dwmy])(?:-(\d+[dwmy]))*(?:-(.*))")))
-            .values("matches")  # Extract only the matches column
-        )
-
-        return cls.objects.annotate(
-            extracted_numbers=Coalesce(
-                Subquery(extracted_numbers_subquery,
-                         output_field=ArrayField(models.CharField(max_length=255), default=list)),
-                Value([])
-            ))
 
 
 class StagingPatientModel(models.Model):
@@ -78,9 +54,9 @@ class StagingPatientModel(models.Model):
     hospital = models.CharField(max_length=255, blank=True, null=True)
 
     StagingPatientManager = IncrementalLoadManager(table_key='patient_id',
-                                               table_model=Patient,
-                                               incremental_key='id',
-                                               incremental_model=IncrementalLog)
+                                                   table_model=Patient,
+                                                   incremental_key='id',
+                                                   incremental_model=IncrementalLog)
 
     objects = StagingPatientManager
 
@@ -91,13 +67,12 @@ class StagingPatientModel(models.Model):
 class StagingActivityModel(models.Model):
     id = models.IntegerField(primary_key=True)
     content_slug = models.CharField(max_length=255, blank=True)
-    schedule_id = models.IntegerField(
-        blank=True)  # ForeignKey(StagingScheduleModel, db_column='schedule_id', on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    schedule_id = models.IntegerField(blank=True)
 
     StagingActivityManager = IncrementalLoadManager(table_key='activity_id',
-                                                table_model=Activity,
-                                                incremental_key='id',
-                                                incremental_model=IncrementalLog)
+                                                    table_model=Activity,
+                                                    incremental_key='id',
+                                                    incremental_model=IncrementalLog)
 
     objects = StagingActivityManager
 
@@ -111,9 +86,9 @@ class StagingJourneyModel(models.Model):
     joint_slug = models.CharField(max_length=255, blank=True, null=True)
 
     StagingJourneyManager = IncrementalLoadManager(table_key='journey_id',
-                                               table_model=Journey,
-                                               incremental_key='id',
-                                                incremental_model=IncrementalLog)
+                                                   table_model=Journey,
+                                                   incremental_key='id',
+                                                   incremental_model=IncrementalLog)
 
     objects = StagingJourneyManager
 
@@ -128,9 +103,9 @@ class StagingDeviceModel(models.Model):
     os_version = models.CharField(max_length=50, blank=True)
 
     StagingDeviceManager = IncrementalLoadManager(table_key='device_id',
-                                              table_model=Device,
-                                              incremental_key='id',
-                                                incremental_model=IncrementalLog)
+                                                  table_model=Device,
+                                                  incremental_key='id',
+                                                  incremental_model=IncrementalLog)
     objects = StagingDeviceManager
 
     class Meta:
@@ -144,9 +119,9 @@ class StagingSurveyModel(models.Model):
     tags = ArrayField(models.CharField(max_length=200, blank=True), blank=True, default=list, null=True)
 
     StagingSurveyManager = IncrementalLoadManager(table_key='survey_id',
-                                              table_model=Survey,
-                                              incremental_key='id',
-                                                incremental_model=IncrementalLog)
+                                                  table_model=Survey,
+                                                  incremental_key='id',
+                                                  incremental_model=IncrementalLog)
 
     objects = StagingSurveyManager
 
@@ -188,12 +163,11 @@ class StagingStepResultsModel(models.Model):
     date = models.DateField()
     value = models.IntegerField()
 
-    # StagingStepResultsManager = FullLoadStagingManager(table_model=StepResult)
     StagingStepResultsManager = IncrementalLoadManager(
         table_key='step_result_date',
         table_model=StepResult,
         incremental_key='date',
-                                                incremental_model=IncrementalLog)
+        incremental_model=IncrementalLog)
 
     objects = StagingStepResultsManager
 
@@ -225,7 +199,7 @@ staging_pipeline = [
     StagingDeviceModel,
     StagingActivityModel,
     StagingSurveyModel,
-    # StagingStepResultsModel,
+    StagingStepResultsModel,
     StagingJourneyActivityModel,
     StagingPatientJourneyModel,
     StagingSurveyResultsModel

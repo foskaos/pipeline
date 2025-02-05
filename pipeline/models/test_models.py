@@ -4,25 +4,28 @@ import pytest
 from django.db.utils import IntegrityError
 
 from .core import Schedule, Activity, Patient
-from .staging import StagingPatientModel,StagingScheduleModel, IncrementalLog
+from .staging import StagingPatientModel, StagingScheduleModel, IncrementalLog
 from .analytics import AnalyticsSchedule
 from .loaders import ScheduleWindowTransformer
+
+
 @pytest.mark.django_db()
 def test_core_models_are_readonly():
-   """Test ExternalDatabaseModel prevents writes"""
-   models_to_test = [
-       (Schedule, {'id': 1, 'slug': 'test-schedule'}),
-       (Activity, {'id': 1, 'content_slug': 'test-activity', 'schedule_id': 1}),
-       (Patient, {'id': 1, 'age_bracket': 'Adult', 'sex': 'M', 'hospital': 'Test'})
-   ]
+    """Test ExternalDatabaseModel prevents writes"""
+    models_to_test = [
+        (Schedule, {'id': 1, 'slug': 'test-schedule'}),
+        (Activity, {'id': 1, 'content_slug': 'test-activity', 'schedule_id': 1}),
+        (Patient, {'id': 1, 'age_bracket': 'Adult', 'sex': 'M', 'hospital': 'Test'})
+    ]
 
-   for model, test_data in models_to_test:
-       with pytest.raises(NotImplementedError, match="This model is read-only."):
-           model.objects.create(**test_data)
+    for model, test_data in models_to_test:
+        with pytest.raises(NotImplementedError, match="This model is read-only."):
+            model.objects.create(**test_data)
 
-       instance = model(**test_data)
-       with pytest.raises(NotImplementedError, match="This model is read-only."):
-           instance.save()
+        instance = model(**test_data)
+        with pytest.raises(NotImplementedError, match="This model is read-only."):
+            instance.save()
+
 
 @pytest.mark.django_db
 def test_incremental_log_defaults():
@@ -34,8 +37,9 @@ def test_incremental_log_defaults():
     assert log.step_result_date is None
 
 
-@pytest.mark.django_db(databases=['msk_db','default'])
+@pytest.mark.django_db(databases=['msk_db', 'default'])
 def test_staging_models_incremental_load():
+    """tests incremental loading"""
     mock_data = {
         'id': 1,
         'age_bracket': "Adult",
@@ -57,6 +61,7 @@ def test_staging_models_incremental_load():
         assert staged_patient.age_bracket == "Adult"
         assert staged_patient.sex == "M"
         assert staged_patient.hospital == "General"
+
 
 @pytest.mark.django_db
 def test_analytics_models_linked_properly():

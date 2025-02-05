@@ -78,18 +78,6 @@ DATABASE_SCHEMA_EDITORS = {
     'default': 'django.db.backends.postgresql.schema.DatabaseSchemaEditor',
 }
 
-if "test" in sys.argv or "pytest" in sys.argv:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'test_msk_db',  # Simplified test DB name
-            'USER': os.getenv("POSTGRES_USER"),
-            'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
-            'HOST': os.getenv("POSTGRES_HOST", "db"),
-            'PORT': os.getenv("POSTGRES_PORT", 5432),
-        }
-    }
-
 
 DATABASES = {
     'default': {
@@ -123,12 +111,7 @@ DATABASES = {
 
 
 
-# if "test" in sys.argv or "pytest" in sys.argv:
-#     DATABASES["default"]["NAME"] = "test_msk_database"
-
-
 DATABASE_ROUTERS = ["msk_pipeline.db_router.MSKDatabaseRouter"]
-# DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
 # Password validation

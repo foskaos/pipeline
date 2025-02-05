@@ -4,10 +4,6 @@
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Func, OuterRef, Subquery, Value, QuerySet
-from django.db.models.functions import Coalesce
-
-
 
 
 class ExternalDatabaseModel(models.Model):
@@ -27,7 +23,6 @@ class Schedule(ExternalDatabaseModel):
     class Meta:
         managed = False
         db_table = 'schedule'
-
 
 
 class Activity(ExternalDatabaseModel):
@@ -130,86 +125,3 @@ class SurveyResult(ExternalDatabaseModel):
     class Meta:
         managed = False
         db_table = 'survey_result'
-#
-# class ProcessedModelQuerySet(models.QuerySet):
-#     def from_unmanaged_data(self):
-#         # Extract data from the unmanaged model, apply transformations
-#         records = Survey.objects.all()
-#
-#         #            filter(
-#         #     created_at__gte="2024-01-01"  # Example condition
-#         # ).values("id", "raw_field"))  # Select only necessary fields
-#         import ipdb; ipdb.set_trace()
-#         bulk_instances = [
-#             ProcessedSurveyModel(
-#                 id=record.id,
-#                 slug=record.slug.upper(),  # Example transformation
-#                 version=record.version,
-#                 tags=record.tags if record.tags else []
-#             )
-#             for record in records
-#         ]
-#         return bulk_instances
-#
-#
-# class ProcessedModelManager(models.Manager):
-#     def get_queryset(self):
-#         return ProcessedModelQuerySet(self.model, using=self._db)
-#
-#     def populate_from_unmanaged(self):
-#         instances = self.get_queryset().from_unmanaged_data()
-#         self.bulk_create(instances, ignore_conflicts=True)  # Bulk insert, avoiding duplicates
-#
-#
-# class ProcessedSurveyModel(models.Model):
-#     id = models.IntegerField(primary_key=True)
-#     slug = models.CharField(max_length=255)
-#     version = models.CharField(max_length=50)
-#     tags = ArrayField(models.CharField(max_length=200), blank=True, default=list)
-#
-#     objects = ProcessedModelManager()
-#
-#     class Meta:
-#         db_table = 'processed_survey'
-#
-#
-# class ProcessedScheduleManager(models.Manager):
-#
-#     def populate_from_unmanaged(self):
-#         """Populates Schedule objects from unmanaged database"""
-#         instances = Schedule.objects.all()
-#         self.bulk_create(instances, ignore_conflicts=True)  # Bulk insert, avoiding duplicates
-#
-#
-# class ProcessedScheduleModel(models.Model):
-#     id = models.IntegerField(primary_key=True)
-#     slug = models.CharField(max_length=255)
-#     extracted_numbers = ArrayField(models.CharField(max_length=200,default=None), blank=True, default=list)
-#     objects = ProcessedScheduleManager()
-#
-#     @classmethod
-#     def with_extracted_numbers(cls) -> models.QuerySet:
-#         """
-#         Annotates each Schedule instance with an array of numbers extracted from `slug`
-#         using PostgreSQL's `regexp_matches()`, ensuring rows with no matches are included.
-#         """
-#
-#         class RegexpMatches(Func):
-#             function = 'REGEXP_MATCHES'
-#             arity = 2  # Requires two arguments (column, regex pattern)
-#
-#         extracted_numbers_subquery = (
-#             cls.objects.filter(id=OuterRef("id"))
-#             .annotate(matches=RegexpMatches("slug", Value(r"(\d+[dwmy])(?:-(\d+[dwmy]))*(?:-(.*))")))
-#             .values("matches")  # Extract only the matches column
-#         )
-#
-#         return cls.objects.annotate(
-#             extracted_numbers=Coalesce(
-#                 Subquery(extracted_numbers_subquery,
-#                          output_field=ArrayField(models.CharField(max_length=255), default=list)),
-#                 Value([])
-#             ))
-#
-#     class Meta:
-#         db_table = 'processed_schedule'

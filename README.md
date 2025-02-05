@@ -4,6 +4,8 @@
 ## Overview
 This project sets up a data pipeline using Docker and Docker Compose, integrating PostgreSQL and Django. The pipeline runs within a Dockerized environment, ensuring consistency across different setups.
 
+Essential commands provided in a Makefile
+
 ## Prerequisites
 - [Docker](https://www.docker.com/get-started) installed on your system.
 - [Docker Compose](https://docs.docker.com/compose/install/) installed.
@@ -54,13 +56,13 @@ docker-compose exec web bash
 ### 7. Run the tests
 Execute the following command inside the web container to run the pipeline:
 ```bash
-pytest
+make test
 ```
 
 ### 7. Run the Pipeline
 Execute the following command inside the web container to run the pipeline:
 ```bash
-python manage.py run_pipeline
+make run-pipeline
 ```
 
 ## Architecture Overview
@@ -79,4 +81,4 @@ This project consists of two main containers:
 - The ```patient_journey_schedule_window``` table is quite large, it would be good to make an incremental loader for it, perhaps using hasing?
 - To check which survey results were created in time, we could do make new table. It would have a conditional field base on the milestone slug to get the milestone date. The actual date window could be found from this. Then we could join the survey results based on this window and produce a list of patient activities that were compled in the schedule window
 - As this is already dockerized, we could simply run ```make test``` in the container. The CI/CD pipeline could be configured to run this on every merge request
-
+- WAY more testing. (Schedule slug transformer)
