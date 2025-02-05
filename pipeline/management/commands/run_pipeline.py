@@ -60,7 +60,6 @@ class Command(BaseCommand):
         Modify staging_pipeline and analytics_pipeline
         to include your specific model classes.
         """
-        # Import your model classes here to avoid circular imports
 
         # Execute pipelines based on command options
         if not options['skip_staging']:
@@ -82,8 +81,3 @@ class Command(BaseCommand):
             if options['print_logs']:
                 for model_name, log_entry in analytics_log.items():
                     self.stdout.write(f'{model_name}: {log_entry}')
-
-# Usage example:
-# python manage.py run_pipeline
-# python manage.py run_pipeline --skip-staging
-# python manage.py run_pipeline --skip-analytics
