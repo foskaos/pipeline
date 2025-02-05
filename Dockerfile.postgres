@@ -1,0 +1,6 @@
+FROM postgres:17
+
+# Copy the initialization SQL script into the container
+COPY msk_db.sql /
+
+

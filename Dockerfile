@@ -4,8 +4,9 @@ FROM python:3.12
 # Create a directory for the app code inside the container
 WORKDIR /app
 
-# Install netcat for waiting for PostgreSQL
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+# Install required system dependencies
+RUN apt-get update && apt-get install -y netcat-openbsd cron
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY requirements.txt .

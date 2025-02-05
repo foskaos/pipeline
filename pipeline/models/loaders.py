@@ -147,7 +147,6 @@ class DataLoader(models.Manager):
                             related_field_lookup: dict) -> models.Model:
 
         for fld in related_fields_for_model:
-            print(fld.name)
             if fld.many_to_many:
                 continue
             related_model_name = fld.related_model.__name__
@@ -157,7 +156,6 @@ class DataLoader(models.Manager):
                 # Looks like we have an integrity problem, set to null
                 error_log = ('Missing Value', fld.name, instance)
                 self.log.append(error_log)
-                print('missing')
                 related_obj = None
             instance[fld.name] = related_obj
         return self.model(**instance)
@@ -237,9 +235,6 @@ class FullLoadManager(DataLoader):
     def populate_model(self):
         """Populates objects from unmanaged database with full refresh
         """
-        default_batch_size = 100_000
-        # batch_counter = 0
-
         instances = self.full_load_query()
 
         # check if we have any instances.
@@ -383,24 +378,21 @@ class FullLoadQueryManager(FullLoadManager):
 
         self.query = query
 
-
     def full_load_query(self):
-
-        source_fields = [
-            f.name for f in self.table_model._meta.get_fields()
-            if isinstance(f, Field) and (not f.auto_created and not f.is_relation)
-        ]
-
-        # Fetch all records from unmanaged source as a generator, 100K items at a time
+        # Fetch all records from provided query
         return self.query()
 
 
     def build_output_object(self,instance, *args,**kwargs):
+        """
+        slightly modified from other loaders as is more simple here
+        """
         output = {}
         for r in self.model._meta.get_fields():
             if r.name == 'id':
                 continue
             if r.is_relation:
+                # add _id suffix for foreign key relationships
                 output[f"{r.name}_id"] = instance[r.name]
             else:
                 output[f"{r.name}"] = instance[r.name]
