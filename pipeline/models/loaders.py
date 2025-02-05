@@ -1,11 +1,12 @@
 from django.db import models, transaction
 from typing import Iterable
 from django.db.models import Field, F
-from abc import ABC,abstractmethod
+from abc import ABC, abstractmethod
 
 import logging
 import time
 import re
+
 logger = logging.getLogger('Pipeline Runner')
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s]: %(message)s')
 
@@ -46,7 +47,7 @@ class ScheduleWindowTransformer(ColumnTransformer):
 
     @property
     def output_fields(self) -> list:
-        return ['id','schedule', 'schedule_offset_start', 'schedule_offset_end', 'schedule_milestone_slug']
+        return ['id', 'schedule', 'schedule_offset_start', 'schedule_offset_end', 'schedule_milestone_slug']
 
     @staticmethod
     def convert_to_days(s: str) -> int | None:
@@ -95,7 +96,7 @@ class ScheduleWindowTransformer(ColumnTransformer):
             offset_sign = cls.extract_offset_sign(identifier)
             ms = cls.extract_milestone(identifier)
 
-            offset_start =  cls.convert_to_days(start) * offset_sign
+            offset_start = cls.convert_to_days(start) * offset_sign
             offset_end = cls.convert_to_days(end) * offset_sign if res.group(2) else None
             milestone_slug = ms
 
@@ -202,20 +203,20 @@ class DataLoader(models.Manager):
         related_field_lookup = self.make_related_fields_lookup(related_fields_for_model)
 
         self.batch_loader(
-                          100_000,
-                          first_instance,
-                          instances_to_load,
-                          related_field_lookup,
-                          related_fields_for_model
-                          )
+            100_000,
+            first_instance,
+            instances_to_load,
+            related_field_lookup,
+            related_fields_for_model
+        )
 
         duration = (time.time() - start)
         logger.info(f"{self.model.__name__} took: {duration:.2f} seconds")
 
 
 class FullLoadManager(DataLoader):
-
     LOAD_TYPE = "Full Load"
+
     def __init__(self, table_model):
         super().__init__()
         self.table_model = table_model
@@ -251,7 +252,6 @@ class FullLoadManager(DataLoader):
 
 
 class IncrementalLoadManager(DataLoader):
-
     LOAD_TYPE = "Incremental Load"
 
     def __init__(self, table_key, table_model, incremental_key, incremental_model):
@@ -293,7 +293,7 @@ class IncrementalLoadManager(DataLoader):
 
         return instances
 
-    def populate_model(self, mock_increment = 0):
+    def populate_model(self, mock_increment=0):
         """Populates table from unmanaged database incrementally.
            Also tracks the last loaded ID to enable incremental loading of this table
         """
@@ -322,8 +322,8 @@ class IncrementalLoadManager(DataLoader):
 
 class IncrementalTransformLoadManager(IncrementalLoadManager):
 
-    def __init__(self, table_key, table_model, incremental_key, incremental_model, transformer:ColumnTransformer):
-        super().__init__( table_key, table_model, incremental_key, incremental_model)
+    def __init__(self, table_key, table_model, incremental_key, incremental_model, transformer: ColumnTransformer):
+        super().__init__(table_key, table_model, incremental_key, incremental_model)
         self.table_key = table_key
         self.table_model = table_model
         self.incremental_key = incremental_key
@@ -357,7 +357,7 @@ class IncrementalTransformLoadManager(IncrementalLoadManager):
             columns_to_add = self.transformer.transform(instance[input_col])
 
             if columns_to_add:
-                combined_dictionary = instance|columns_to_add
+                combined_dictionary = instance | columns_to_add
 
                 output = {col_name: value
                           for col_name, value in combined_dictionary.items()
@@ -366,7 +366,6 @@ class IncrementalTransformLoadManager(IncrementalLoadManager):
                 return self.model(**output)
             else:
                 return None
-
 
         return self.model(**instance)
 
@@ -382,8 +381,7 @@ class FullLoadQueryManager(FullLoadManager):
         # Fetch all records from provided query
         return self.query()
 
-
-    def build_output_object(self,instance, *args,**kwargs):
+    def build_output_object(self, instance, *args, **kwargs):
         """
         slightly modified from other loaders as is more simple here
         """
