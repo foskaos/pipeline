@@ -27,5 +27,20 @@ services:
     volumes:
       - .:/app
 
+  sql:
+    image: postgres:17
+    depends_on:
+      - db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+
+    entrypoint: [ "bash", "/init-db.sh" ]
+    volumes:
+      - ./msk_db.sql:/msk_db.sql
+      - ./init-db.sh:/init-db.sh
+
 volumes:
   postgres_data:
